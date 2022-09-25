@@ -44,6 +44,7 @@ const (
 	FieldTypeFile     string = "file"
 	FieldTypeRelation string = "relation"
 	FieldTypeUser     string = "user"
+	FieldTypeFormula  string = "formula"
 )
 
 // FieldTypes returns slice with all supported field types.
@@ -60,6 +61,7 @@ func FieldTypes() []string {
 		FieldTypeFile,
 		FieldTypeRelation,
 		FieldTypeUser,
+		FieldTypeFormula,
 	}
 }
 
@@ -93,6 +95,8 @@ func (f *SchemaField) ColDefinition() string {
 		return "Boolean DEFAULT FALSE"
 	case FieldTypeJson:
 		return "JSON DEFAULT NULL"
+	case FieldTypeFormula:
+		return "TEXT GENERATED ALWAYS AS ('') VIRTUAL"
 	default:
 		return "TEXT DEFAULT ''"
 	}
@@ -200,6 +204,8 @@ func (f *SchemaField) InitOptions() error {
 		options = &RelationOptions{}
 	case FieldTypeUser:
 		options = &UserOptions{}
+	case FieldTypeFormula: 
+		options = &FormulaOptions{}
 	default:
 		return errors.New("Missing or unknown field field type.")
 	}
@@ -219,7 +225,7 @@ func (f *SchemaField) PrepareValue(value any) any {
 	f.InitOptions()
 
 	switch f.Type {
-	case FieldTypeText, FieldTypeEmail, FieldTypeUrl:
+	case FieldTypeText, FieldTypeEmail, FieldTypeUrl, FieldTypeFormula:
 		return cast.ToString(value)
 	case FieldTypeJson:
 		val, _ := types.ParseJsonRaw(value)
@@ -492,4 +498,9 @@ func (o UserOptions) Validate() error {
 	return validation.ValidateStruct(&o,
 		validation.Field(&o.MaxSelect, validation.Required, validation.Min(1)),
 	)
+}
+
+// -------------------------------------------------------------------
+type FormulaOptions struct {
+	Formula string `form:"formula" json:"formula"`
 }
